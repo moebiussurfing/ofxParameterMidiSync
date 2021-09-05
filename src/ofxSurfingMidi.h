@@ -1,5 +1,16 @@
 #pragma once
 
+
+/*
+
+TODO:
+
++ add midi out for feedback mirror
++ add groups on runtime
+
+*/
+
+
 #include "ofMain.h"
 
 #include "ofxParameterMidiSync.h"
@@ -11,36 +22,37 @@ class ofxSurfingMidi : public ofxParameterMidiSync
 {
 
 public:
-
 	//ofxSurfingMidi();
-	//~ofxSurfingMidi();
+	~ofxSurfingMidi();
 
-	void setup(ofAbstractParameter & parameters) override;//default
-
-	void setupImGui();
-	void drawImGui();
-	ofxSurfing_ImGui_Manager guiManager; // In MODE A ofxGui will be instatiated inside the class
-
+private:
 	void init();
 	void startup();
-	
-	void update(ofEventArgs& e) override;
 
+public:
+	void setup(ofAbstractParameter & parameters) override;
+	void drawImGui();
+
+private:
+	void exit() override;
+
+	void setupImGui();
+
+	ofxSurfing_ImGui_Manager guiManager;
+	
+	//void update(ofEventArgs& e) override;
 	//void update();
 	//void draw();
 	//void update(ofEventArgs & args);
 	//void draw(ofEventArgs & args);
-	
 	//void keyPressed(ofKeyEventArgs &eventArgs);
-	void exit();
 
-	void setBool(bool b);
-	bool getBool();
+	//void setBool(bool b);
+	//bool getBool();
 
 	ofParameterGroup params_MidiPorts{ "PORTS" };
 	ofParameterGroup params_AppState{ "AppState" };
 
-private:
 
 };
 

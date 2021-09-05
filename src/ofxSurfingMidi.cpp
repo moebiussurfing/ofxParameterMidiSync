@@ -1,37 +1,52 @@
 #include "ofxSurfingMidi.h"
+
 ////--------------------------------------------------------------
 //ofxSurfingMidi::ofxSurfingMidi() {
 //	//ofAddListener(ofEvents().update, this, &ofxSurfingMidi::update);
 //	//ofAddListener(ofEvents().draw, this, &ofxSurfingMidi::draw);
 //	//ofAddListener(ofEvents().keyPressed, this, &ofxSurfingMidi::keyPressed);
 //}
-//
-////--------------------------------------------------------------
-//ofxSurfingMidi::~ofxSurfingMidi() {
-//	//ofRemoveListener(ofEvents().update, this, &ofxSurfingMidi::update);
-//	//ofRemoveListener(ofEvents().draw, this, &ofxSurfingMidi::draw);
-//	//ofRemoveListener(ofEvents().keyPressed, this, &ofxSurfingMidi::keyPressed);
-//}
+
+//--------------------------------------------------------------
+ofxSurfingMidi::~ofxSurfingMidi() {
+	ofLogNotice(__FUNCTION__);
+
+	//ofxParameterMidiSync::~ofxParameterMidiSync();
+	enableMidi(false);
+	learningParameter = nullptr;
+
+	exit();
+
+	//ofRemoveListener(ofEvents().update, this, &ofxSurfingMidi::update);
+	//ofRemoveListener(ofEvents().draw, this, &ofxSurfingMidi::draw);
+	//ofRemoveListener(ofEvents().keyPressed, this, &ofxSurfingMidi::keyPressed);
+}
 
 //-----------------------------------------------------
 void ofxSurfingMidi::setup(ofAbstractParameter & parameters) {
 	init();
+
 	ofxParameterMidiSync::setup(portNum.get(), parameters, false, false);
 
-	//startup();
+	startup();
 }
 
 //--------------------------------------------------------------
 void ofxSurfingMidi::init() {
+
+	ofLogNotice(__FUNCTION__);
+
 	path_Global = "ofxSurfingMidi/";
 	ofxSurfingHelpers::CheckFolder(path_Global);
 
 	path_Ports = path_Global + "Midi-Ports.xml";
 	path_AppState = path_Global + "AppState.xml";
 
+	//setFilePath(path_Global + "Midi-Mapping.xml");
+
 	setupImGui();
 
-	ofAddListener(ofEvents().update, this, &ofxSurfingMidi::update);
+	//ofAddListener(ofEvents().update, this, &ofxSurfingMidi::update);
 }
 
 //--------------------------------------------------------------
@@ -44,36 +59,42 @@ void ofxSurfingMidi::startup() {
 	params_MidiPorts.add(portNum);
 	params_MidiPorts.add(portName);
 
-	params_AppState.add(bMidiEnabled);
+	params_AppState.add(bMidiEnabled_Settings);
 	params_AppState.add(bSmoothingEnabled);
+	params_AppState.add(smoothing);
 
 	ofxSurfingHelpers::loadGroup(params_MidiPorts, path_Ports);
 	ofxSurfingHelpers::loadGroup(params_AppState, path_AppState);
 
+	setFilePath(path_Global + "Midi-Mapping_" + syncGroup.getName() + ".xml");
+
+	ofxParameterMidiSync::load();
+
 	//-
 
-	//styles
-	guiManager.clearStyles();
-	guiManager.AddStyle(bLoad, OFX_IM_BUTTON_BIG);
-	guiManager.AddStyle(bSave, OFX_IM_BUTTON_BIG);
-	guiManager.AddStyle(bReset, OFX_IM_BUTTON_SMALL);
-	guiManager.AddStyle(bLearning, OFX_IM_TOGGLE_BIG);
-	guiManager.AddStyle(bUnlearning, OFX_IM_BUTTON_SMALL);
-	guiManager.AddStyle(bMidiEnabled, OFX_IM_TOGGLE_BIG);
-	guiManager.AddStyle(bSmoothingEnabled, OFX_IM_TOGGLE_SMALL);
-	guiManager.AddStyle(smoothing, OFX_IM_DEFAULT);
+	////styles
+	//guiManager.clearStyles();
+	//guiManager.AddStyle(bLoad, OFX_IM_BUTTON_BIG);
+	//guiManager.AddStyle(bSave, OFX_IM_BUTTON_BIG);
+	//guiManager.AddStyle(bReset, OFX_IM_BUTTON_SMALL);
+	//guiManager.AddStyle(bLearning, OFX_IM_TOGGLE_BIG);
+	//guiManager.AddStyle(bUnlearning, OFX_IM_BUTTON_SMALL);
+	//guiManager.AddStyle(bMidiEnabled, OFX_IM_TOGGLE_BIG);
+	//guiManager.AddStyle(bMidiEnabled_Settings, OFX_IM_TOGGLE_BIG);
+	//guiManager.AddStyle(bSmoothingEnabled, OFX_IM_TOGGLE_SMALL);
+	//guiManager.AddStyle(smoothing, OFX_IM_DEFAULT);
 }
 
-//-----------------------------------------------------
-void ofxSurfingMidi::update(ofEventArgs& e) {
-	if (ofGetFrameNum() == 1) startup();
-
-	//ofLogNotice(__FUNCTION__);
-
-	for (map<int, shared_ptr<ofParameterMidiInfo> > ::iterator it = synced.begin(); it != synced.end(); ++it) {
-		it->second->updateSmoothing(smoothing);
-	}
-}
+////-----------------------------------------------------
+//void ofxSurfingMidi::update(ofEventArgs& e) {
+//	//if (ofGetFrameNum() == 1) startup();
+//
+//	////ofLogNotice(__FUNCTION__);
+//
+//	//for (map<int, shared_ptr<ofParameterMidiInfo> > ::iterator it = synced.begin(); it != synced.end(); ++it) {
+//	//	it->second->updateSmoothing(smoothing);
+//	//}
+//}
 
 ////--------------------------------------------------------------
 //void ofxSurfingMidi::update(){
@@ -111,19 +132,23 @@ void ofxSurfingMidi::update(ofEventArgs& e) {
 
 //--------------------------------------------------------------
 void ofxSurfingMidi::exit() {
+	ofLogNotice(__FUNCTION__);
+
 	ofxSurfingHelpers::saveGroup(params_MidiPorts, path_Ports);
 	ofxSurfingHelpers::saveGroup(params_AppState, path_AppState);
+
+	ofxParameterMidiSync::save();
 }
 
-//--------------------------------------------------------------
-void ofxSurfingMidi::setBool(bool b) {
-	ofLogNotice(__FUNCTION__) << ofToString(b ? "true" : "false");
-}
-
-//--------------------------------------------------------------
-bool ofxSurfingMidi::getBool() {
-	return true;
-}
+////--------------------------------------------------------------
+//void ofxSurfingMidi::setBool(bool b) {
+//	ofLogNotice(__FUNCTION__) << ofToString(b ? "true" : "false");
+//}
+//
+////--------------------------------------------------------------
+//bool ofxSurfingMidi::getBool() {
+//	return true;
+//}
 
 //--------------------------------------------------------------
 void ofxSurfingMidi::setupImGui()
@@ -144,12 +169,63 @@ void ofxSurfingMidi::drawImGui()
 
 			guiManager.beginWindow(n.c_str(), &bOpen0, window_flags);
 			{
-				//ImGui::Button("Button");
+				//guiManager.AddGroup(parameters, OFX_IM_GROUP_HIDDEN_HEADER);
 
-				guiManager.AddGroup(parameters);
+				//ImGui::Text("Midi");
+				guiManager.Add(bMidiEnabled_Settings, OFX_IM_TOGGLE_BIG);
+				if (bMidiEnabled_Settings) {
+					guiManager.Add(portNum);
+					guiManager.Add(portName, OFX_IM_TEXT_DISPLAY);
+				}
 
 				ImGui::Spacing();
-				ImGui::TextWrapped(strDebug.c_str());
+				//ImGui::Text("Mapping");
+				{
+					bool bOpen = false;
+					ImGuiColorEditFlags _flagw = (bOpen ? ImGuiWindowFlags_NoCollapse : ImGuiWindowFlags_None);
+					if (ImGui::CollapsingHeader("Mapping", _flagw))
+					{
+						guiManager.refreshLayout();
+
+						if (bLearning)guiManager.Add(bLearning, OFX_IM_TOGGLE_BIG_BORDER_BLINK);
+						else guiManager.Add(bLearning, OFX_IM_TOGGLE_BIG);
+						
+						guiManager.Add(bUnlearning, OFX_IM_TOGGLE_SMALL);
+
+						ImGui::Spacing();
+
+						guiManager.Add(bLoad, OFX_IM_BUTTON_SMALL, true, 2);
+						guiManager.Add(bSave, OFX_IM_BUTTON_SMALL, false, 2);
+						guiManager.Add(bReset, OFX_IM_BUTTON_SMALL);
+
+						ImGui::Spacing();
+
+						//ImGui::Text("Smooth");
+						guiManager.Add(bSmoothingEnabled, OFX_IM_TOGGLE_SMALL);
+						if (bSmoothingEnabled)guiManager.Add(smoothing, OFX_IM_DEFAULT);
+					}
+				}
+
+				//ImGui::Spacing();
+
+				//-
+
+				// debug
+				{
+					bool bOpen = false;
+					ImGuiColorEditFlags _flagw = (bOpen ? ImGuiWindowFlags_NoCollapse : ImGuiWindowFlags_None);
+					if (ImGui::CollapsingHeader("Log", _flagw))
+					{
+						//guiManager.refreshLayout();
+						string str = "Learning: " + (string)(bLearning ? "YES" : "NO") + "\n";
+						str += "Parameter: " + (string)((learningParameter == nullptr) ? "nullptr" : learningParameter->getName()) + "\n";
+						str += "CC: " + ofToString(midiMessage.control) + "\n";
+						str += "Message: \n" + midiMessage.toString() + "\n";
+						//	str += "is Recording: " +(string)(?"YES":"NO");
+						strDebug = str;
+						ImGui::TextWrapped(strDebug.c_str());
+					}
+				}
 
 				//				float _h = WIDGETS_HEIGHT;
 				//				float _w100 = getWidgetsWidth(1);
@@ -319,8 +395,8 @@ void ofxSurfingMidi::drawImGui()
 			{
 				guiManager.AddGroup(syncGroup);
 				//ofxParamMidiSync::printParamGroupElements(syncGroup);
-				guiManager.endWindow();
 			}
+			guiManager.endWindow();
 		}
 	}
 	guiManager.end(); // global end

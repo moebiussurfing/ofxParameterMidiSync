@@ -9,28 +9,21 @@
 class ofApp : public ofBaseApp{
 	
 public:
-	
 	void setup();
-	void update();
 	void draw();
-	void exit();
-	
 	void keyPressed(int key);
-	void keyReleased(int key);
-	
-	void mouseMoved(int x, int y );
-	void mouseDragged(int x, int y, int button);
-	void mousePressed(int x, int y, int button);
-	void mouseReleased();
     
 	// Parameters
     ofParameterGroup params;
     ofParameterGroup paramsGroups[3];
-    ofParameter<float> param1, param2;
+    ofParameter<float> floatParam1, floatParam2;
+	ofParameter<int> intParam;
     ofParameter<ofColor>color;
-    ofParameter<ofFloatColor>floatColor;
+    ofParameter<ofFloatColor>floatColor1;
+    ofParameter<ofFloatColor>floatColor2;
 	ofParameter<glm::vec3>vecParam;
-    ofParameter<bool> boton;
+    ofParameter<bool> bBool1;
+    ofParameter<bool> bBool2;
     
 	ofxSurfingMidi sync;
 };

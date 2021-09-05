@@ -3,27 +3,33 @@
 
 //--------------------------------------------------------------
 void ofApp::setup() {
+
 	ofSetVerticalSync(true);
-	ofBackground(255, 255, 255);
-	ofSetLogLevel(OF_LOG_VERBOSE);
+	ofBackground(255);
 	
 	//-
 	
 	params.setName("ofApp-Params");
 
 	params.add(vecParam.set("vecParam", {0, 0, 0}, {-1, -1, -1}, {1, 1, 1}));
-	params.add(param2.set("param2", 0, 0, 10));
+	params.add(intParam.set("intParam", 0, 0, 10));
 	params.add(color.set("color", ofColor(0), ofColor(0,0), ofColor(255, 255)));
   
-	paramsGroups[0].setName("0");
-    paramsGroups[0].add(boton.set("boton", true));
-	paramsGroups[0].add(floatColor.set("FloatColor", ofFloatColor::white, ofFloatColor(0,0), ofFloatColor::white));
+	paramsGroups[0].setName("Group 0");
+    paramsGroups[0].add(bBool1.set("bBool1", true));
+    paramsGroups[0].add(bBool2.set("bBool2", true));
+	paramsGroups[0].add(floatColor1.set("floatColor1", ofFloatColor::orange, ofFloatColor(0,0), ofFloatColor::white));
 	
-    paramsGroups[1].setName("1");
-    paramsGroups[1].add(param1.set("param1", 0, 0, 1000));
+    paramsGroups[1].setName("Group 1");
+    paramsGroups[1].add(floatParam1.set("floatParam1", 0, 0, 1000));
+	paramsGroups[1].add(floatParam2.set("floatParam2", 0, 0, 10));
+	paramsGroups[1].add(floatColor2.set("floatColor2", ofFloatColor::green, ofFloatColor(0,0), ofFloatColor::white));
     paramsGroups[0].add(paramsGroups[1]);
     
-    paramsGroups[2].setName("2");
+    paramsGroups[2].setName("Group 2");
+    paramsGroups[2].add(bBool2);
+    paramsGroups[2].add(floatColor1);
+    paramsGroups[2].add(floatColor2);
     paramsGroups[1].add(paramsGroups[2]);
 	
     params.add(paramsGroups[0]);
@@ -34,25 +40,14 @@ void ofApp::setup() {
 }
 
 //--------------------------------------------------------------
-void ofApp::update() {
-}
-
-//--------------------------------------------------------------
 void ofApp::draw() {
-	ofSetColor(0);
 	
 	sync.drawImGui();
 }
 
 //--------------------------------------------------------------
-void ofApp::exit() {
-}
-
-//--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
-
 	
-	//you can use keystrokes too.
 	switch(key) {
 		case ' ':
             sync.learn();
@@ -67,24 +62,4 @@ void ofApp::keyPressed(int key) {
             sync.unlearn();
             break;
 	}
-}
-
-//--------------------------------------------------------------
-void ofApp::keyReleased(int key) {
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y) {
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button) {
-}
-
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button) {
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased() {
 }

@@ -1,3 +1,12 @@
+**FORK**  
+Modified by **moebiusSrufing**:  
+* small modifications
+* added ImGui
+* session settings to auto recall port and MIDI mapping.
+
+------------------------
+
+
 # ofxParameterMidiSync
 
 This is an addon for openFrameworks.

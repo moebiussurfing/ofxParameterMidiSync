@@ -3,7 +3,7 @@
 //  emptyExample
 //
 //  Created by Roy Macdonald on 18-08-15.
-//	Modified by moebiusSrufing: small modifications, added ImGui and settings.
+//	Modified by moebiusSurfing: small modifications, added ImGui and settings.
 //
 
 
@@ -22,6 +22,7 @@ public:
     ofxParameterMidiSync();
     ~ofxParameterMidiSync();
 
+	virtual void exit() {};
 	virtual void setup(ofAbstractParameter & parameters);//default
 
     void setup(int portNum, bool bUseRecorder = true , bool bUsePlayer = true);
@@ -43,7 +44,6 @@ public:
     void save(string path);
     
     void reset();
-    //void refreshPort();
     
     void drawDebug();
 	
@@ -51,21 +51,18 @@ public:
 	void setGuiPosition(float x, float y );
 	void drawGui();
 	
-	
     bool isLearning(){return bLearning;}
     bool isUnlearning(){return bUnlearning;}
     
     std::shared_ptr<ofxMidiRecorder> recorder = nullptr;
     std::shared_ptr<ofxMidiPlayer> player = nullptr;
     ofParameter<float> smoothing;
-
 	
 	void enableSmoothing();
 	void disableSmoothing();
 	bool isSmoothingEnabled();
 	
 	ofParameterGroup parameters;
-	
 	
 	std::shared_ptr<ofxMidiIn> getMidiIn();
 	std::shared_ptr<ofxMidiOut> getMidiOut();
@@ -78,9 +75,11 @@ public:
 	ofParameter<int> portNum;
 	ofParameter<string> portName;
 
+//private:
 	std::string path_Ports;
 	std::string path_AppState;
 	std::string path_Global;
+	std::string path_MappingSettings;
 
 protected:
 	std::shared_ptr<ofxPanel> syncSettingsGui;
@@ -88,11 +87,13 @@ protected:
 	void openMidi();
 	void closeMidi();
 	
-	ofParameter<void> bLoad, bSave, bReset;
+	ofParameter<bool> bLoad, bSave, bReset;
+	//ofParameter<void> bLoad, bSave, bReset;
+
 	ofParameter<bool> bLearning, bUnlearning, bMidiEnabled, bSmoothingEnabled;
+	ofParameter<bool> bMidiEnabled_Settings;
 	//ofParameter<int> portNum;
 	//ofParameter<string> portName;
-	std::string filePath;
 	
 	//void update(ofEventArgs& e);
 	
