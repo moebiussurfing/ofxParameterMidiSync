@@ -3,7 +3,7 @@
 //  emptyExample
 //
 //  Created by Roy Macdonald on 18-08-15.
-//
+//	Modified by moebiusSrufing: small modifications, added ImGui and settings.
 //
 
 
@@ -21,10 +21,14 @@ class ofxParameterMidiSync:  public ofxMidiListener {
 public:
     ofxParameterMidiSync();
     ~ofxParameterMidiSync();
+
+	virtual void setup(ofAbstractParameter & parameters);//default
+
     void setup(int portNum, bool bUseRecorder = true , bool bUsePlayer = true);
 	void setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder = true , bool bUsePlayer = true);
     void setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder = true , bool bUsePlayer = true);
-    void setSyncGroup( ofAbstractParameter & parameters);
+    
+	void setSyncGroup( ofAbstractParameter & parameters);
     void setSyncGroup( ofParameterGroup & parameters);
     void enableMidi(bool b = true);
 
@@ -39,6 +43,7 @@ public:
     void save(string path);
     
     void reset();
+    //void refreshPort();
     
     void drawDebug();
 	
@@ -67,6 +72,16 @@ public:
 	
 	void setFilePath(std::string path);
 	std::string getFilePath();
+	
+	virtual void update(ofEventArgs& e);
+
+	ofParameter<int> portNum;
+	ofParameter<string> portName;
+
+	std::string path_Ports;
+	std::string path_AppState;
+	std::string path_Global;
+
 protected:
 	std::shared_ptr<ofxPanel> syncSettingsGui;
 	
@@ -75,10 +90,11 @@ protected:
 	
 	ofParameter<void> bLoad, bSave, bReset;
 	ofParameter<bool> bLearning, bUnlearning, bMidiEnabled, bSmoothingEnabled;
-	ofParameter<int> portNum;
+	//ofParameter<int> portNum;
+	//ofParameter<string> portName;
 	std::string filePath;
 	
-	void update(ofEventArgs& e);
+	//void update(ofEventArgs& e);
 	
     void newMidiMessage(ofxMidiMessage& eventArgs);
 
@@ -98,6 +114,7 @@ protected:
    
     shared_ptr<ofxMidiNanoKontrolButtons> kontrolButtons;
 
+	string strDebug;
 
 private:
 	bool bMidiOpened = false;

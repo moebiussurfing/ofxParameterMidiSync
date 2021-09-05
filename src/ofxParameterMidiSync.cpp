@@ -14,11 +14,13 @@
 //-----------------------------------------------------
 ofxParameterMidiSync::ofxParameterMidiSync():bMidiEnabled(false), portNum(-1), bLearning(false), learningParameter(nullptr), bIsSetup(false), bUnlearning(false), bParameterGroupSetup(false){
 }
+
 //-----------------------------------------------------
 ofxParameterMidiSync::~ofxParameterMidiSync(){
     enableMidi(false);
     learningParameter = nullptr;
 }
+
 //-----------------------------------------------------
 std::shared_ptr<ofxMidiIn> ofxParameterMidiSync::getMidiIn(){
 	if(!midiIn){
@@ -26,6 +28,7 @@ std::shared_ptr<ofxMidiIn> ofxParameterMidiSync::getMidiIn(){
 	}
 	return midiIn;
 }
+
 //-----------------------------------------------------
 std::shared_ptr<ofxMidiOut> ofxParameterMidiSync::getMidiOut(){
 	if(!midiOut){
@@ -33,17 +36,26 @@ std::shared_ptr<ofxMidiOut> ofxParameterMidiSync::getMidiOut(){
 	}
 	return midiOut;
 }
+
+//-----------------------------------------------------
+void ofxParameterMidiSync::setup(ofAbstractParameter & parameters) {
+
+	setup(portNum.get(), parameters, false, false);
+}
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::setup(int portNum, ofAbstractParameter & parameters, bool bUseRecorder, bool bUsePlayer){
 	if(ofxParamMidiSync::isParameterGroup(&parameters)){
 		setup(portNum, static_cast<ofParameterGroup&>(parameters), bUseRecorder, bUsePlayer);
 	}
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::setup(int portNum, ofParameterGroup & parameters, bool bUseRecorder, bool bUsePlayer){
 	setSyncGroup(parameters);
     setup(portNum, bUseRecorder, bUsePlayer);
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer){
     bIsSetup = true;
@@ -59,10 +71,12 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 	parameters.add(bSmoothingEnabled.set("Smoothing Enabled", false));
 	parameters.add(smoothing.set("Smoothing",0.5,0,1));
 	parameters.add(this->portNum.set("Midi Port", portNum, 0, getMidiIn()->getNumInPorts() -1));
+	parameters.add(this->portName.set("Name", ""));
 	
 	paramsListeners.push(bLoad.newListener([&](){ load(); }));
 	paramsListeners.push(bSave.newListener([&](){ save(); }));
 	paramsListeners.push(bReset.newListener(this, &ofxParameterMidiSync::reset));
+	//paramsListeners.push(portNum.newListener(this, &ofxParameterMidiSync::refreshPort));
 	
 	paramsListeners.push(bLearning.newListener([&](bool &){
 		if(bLearning && bIsSetup ) {
@@ -114,20 +128,22 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 	}
 	
 	enableMidi(true);
-    
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::update(ofEventArgs& e){
     for (map<int, shared_ptr<ofParameterMidiInfo> > ::iterator it = synced.begin(); it != synced.end(); ++it) {
         it->second->updateSmoothing(smoothing);
     }
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::setSyncGroup( ofAbstractParameter & parameters){
 	if(ofxParamMidiSync::isParameterGroup(&parameters)){
 		setSyncGroup(static_cast<ofParameterGroup&>(parameters));
 	}
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){
     syncGroup = parameters;
@@ -140,6 +156,11 @@ void ofxParameterMidiSync::setSyncGroup( ofParameterGroup & parameters){
 //        }
 //    }
 }
+
+////-----------------------------------------------------
+//void ofxParameterMidiSync::refreshPort() {
+//}
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::reset(){
     synced.clear();
@@ -147,6 +168,7 @@ void ofxParameterMidiSync::reset(){
     bUnlearning = false;
     learningParameter = nullptr;
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::openMidi(){
 	if (bIsSetup && bParameterGroupSetup && !bMidiOpened) {
@@ -160,6 +182,8 @@ void ofxParameterMidiSync::openMidi(){
 			if(recorder)midiIn->addListener(recorder.get());
 			if(player)midiIn->addListener(player.get());
 			getMidiOut()->openPort(portNum);
+
+			portName = midiIn->getName();
 		}else{
 			bMidiEnabled.disableEvents();
 			bMidiEnabled = false;
@@ -167,6 +191,7 @@ void ofxParameterMidiSync::openMidi(){
 		}
 	}
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::closeMidi(){
 	if (bIsSetup && bParameterGroupSetup && bMidiOpened) {
@@ -184,6 +209,7 @@ void ofxParameterMidiSync::closeMidi(){
 		bMidiOpened = false;
 	}
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::enableMidi(bool b){
 	bMidiEnabled = b;
@@ -200,6 +226,7 @@ void ofxParameterMidiSync::enableMidi(bool b){
 //    }
 //    return false;
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::learn(bool bLearn){
 //    if ( bIsSetup ) {
@@ -209,6 +236,7 @@ void ofxParameterMidiSync::learn(bool bLearn){
 //        }
 //    }
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::unlearn(bool bUnlearn){
 //    if ( bIsSetup ) {
@@ -221,6 +249,7 @@ void ofxParameterMidiSync::unlearn(bool bUnlearn){
 //        }
 //    }
 }
+
 //-----------------------------------------------------
 void ofxParameterMidiSync::parameterChanged( ofAbstractParameter & parameter ){
     if (bLearning ) {
@@ -233,10 +262,12 @@ void ofxParameterMidiSync::parameterChanged( ofAbstractParameter & parameter ){
 		}
 	}
 }
+
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter& param){
     return linkMidiToOfParameter(msg, &param);
 }
+
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstractParameter* param){
     if (param ==  nullptr) return false;
@@ -253,11 +284,13 @@ bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstract
     }
     return false;
 }
+
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::load(string path){
 	filePath = path;
 	return load();
 }
+
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::load(){
     ofXml xml;
@@ -292,11 +325,13 @@ bool ofxParameterMidiSync::load(){
     
     return bLoad;
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::save(string path){
 	filePath = path;
 	save();
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::save(){
     ofXml xml;
@@ -310,18 +345,21 @@ void ofxParameterMidiSync::save(){
     xml.save(filePath);
     
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::drawDebug(){
 	
-	string str = "Learning: " + (string)(bLearning?"YES":"NO")+"\n";
-	str += "learningParameter: " + (string)((learningParameter==nullptr)?"nullptr": learningParameter->getName())+"\n";
+	string str = "Learning: " + (string)(bLearning ? "YES" : "NO") + "\n";
+	str += "learningParameter: " + (string)((learningParameter == nullptr) ? "nullptr" : learningParameter->getName()) + "\n";
 	str += "controlNum: " + ofToString(midiMessage.control) + "\n";
 	str += "lastMidiMessage: " + midiMessage.toString() + "\n";
 	//	str += "is Recording: " +(string)(?"YES":"NO");
-	
-	ofDrawBitmapStringHighlight(str, 20, ofGetHeight() - 60);
+	strDebug = str;
+
+	ofDrawBitmapStringHighlight(strDebug, 20, ofGetHeight() - 60);
 	
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
     if (bIsSetup) {
@@ -368,18 +406,22 @@ void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
         midiMessage = message;
     }
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::enableSmoothing(){
 	bSmoothingEnabled = true;
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::disableSmoothing(){
 	bSmoothingEnabled = false;
 }
+
 //--------------------------------------------------------------
 bool ofxParameterMidiSync::isSmoothingEnabled(){
 	return bSmoothingEnabled;
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::setupGui(float x, float y){
 	syncSettingsGui = std::make_shared<ofxPanel>();
@@ -387,20 +429,31 @@ void ofxParameterMidiSync::setupGui(float x, float y){
 	syncSettingsGui->setPosition(x,y);
 	syncSettingsGui->add(parameters);
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::setGuiPosition(float x, float y ){
 	if(syncSettingsGui)syncSettingsGui->setPosition(x,y);
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::drawGui(){
 	if(syncSettingsGui){
 		syncSettingsGui->draw();
+
+		string str = "Learning: " + (string)(bLearning ? "YES" : "NO") + "\n";
+		str += "learningParameter: " + (string)((learningParameter == nullptr) ? "nullptr" : learningParameter->getName()) + "\n";
+		str += "controlNum: " + ofToString(midiMessage.control) + "\n";
+		str += "lastMidiMessage: " + midiMessage.toString() + "\n";
+		//	str += "is Recording: " +(string)(?"YES":"NO");
+		strDebug = str;
 	}
 }
+
 //--------------------------------------------------------------
 void ofxParameterMidiSync::setFilePath(std::string path){
 	filePath = path;
 }
+
 //--------------------------------------------------------------
 std::string ofxParameterMidiSync::getFilePath(){
 	return filePath;
