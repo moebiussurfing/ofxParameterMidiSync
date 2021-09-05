@@ -1,10 +1,13 @@
-**FORK**  
-Modified by **moebiusSrufing**:  
-* small modifications
-* added ImGui
-* session settings to auto recall port and MIDI mapping.
+**FORK** Modified by **moebiusSrufing**:  
+* Small modifications
+* Added ImGui
+* Session settings to auto recall port and MIDI mapping.
+TODO: Add bool toggles/buttons.  
+TODO: Restore Record/Player.
+
 
 ------------------------
+
 
 
 # ofxParameterMidiSync
