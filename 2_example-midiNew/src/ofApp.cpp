@@ -4,11 +4,6 @@
 //--------------------------------------------------------------
 void ofApp::setup() {
 
-	ofSetVerticalSync(true);
-	ofBackground(255);
-	
-	//-
-	
 	params.setName("ofApp-Params");
 
 	params.add(vecParam.set("vecParam", {0, 0, 0}, {-1, -1, -1}, {1, 1, 1}));
@@ -36,13 +31,13 @@ void ofApp::setup() {
     
 	//-
 
-	sync.setup(params);
+	mMidiParams.setup(params);
 }
 
 //--------------------------------------------------------------
 void ofApp::draw() {
 	
-	sync.drawImGui();
+	mMidiParams.drawImGui();
 }
 
 //--------------------------------------------------------------
@@ -50,16 +45,16 @@ void ofApp::keyPressed(int key) {
 	
 	switch(key) {
 		case ' ':
-            sync.learn();
+            mMidiParams.learn();
             break;
         case 's':
-            sync.save();
+            mMidiParams.save();
             break;
         case 'l':
-            sync.load();
+            mMidiParams.load();
             break;
         case OF_KEY_BACKSPACE:
-            sync.unlearn();
+            mMidiParams.unlearn();
             break;
 	}
 }

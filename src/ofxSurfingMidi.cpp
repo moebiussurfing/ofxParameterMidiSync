@@ -31,6 +31,13 @@ void ofxSurfingMidi::setup(ofAbstractParameter & parameters) {
 	startup();
 }
 
+//-----------------------------------------------------
+void ofxSurfingMidi::reset(ofAbstractParameter & parameters) {
+	ofxParameterMidiSync::reset();
+	syncGroup.clear();
+	setSyncGroup(parameters);
+}
+
 //--------------------------------------------------------------
 void ofxSurfingMidi::init() {
 
@@ -54,15 +61,33 @@ void ofxSurfingMidi::startup() {
 
 	ofLogNotice(__FUNCTION__);
 
-	//settings
+	// Settings
 
+	// Midi Ports
 	params_MidiPorts.add(portNum);
 	params_MidiPorts.add(portName);
+
+	//-
+
+	bMidiEnabled_Settings.set("Enable", true);
+	
+	//TODO:
+	bMidiEnabled_Settings.makeReferenceTo(bMidiEnabled);
+
+	// App
+	bGui.set("MIDI", true);
+	bGui_User.set("MIDI Control", true);
+	bGui_Params.set("MIDI Params", false);
+
+	params_AppState.add(bGui);
+	params_AppState.add(bGui_User);
+	params_AppState.add(bGui_Params);
 
 	params_AppState.add(bMidiEnabled_Settings);
 	params_AppState.add(bSmoothingEnabled);
 	params_AppState.add(smoothing);
 
+	// Load
 	ofxSurfingHelpers::loadGroup(params_MidiPorts, path_Ports);
 	ofxSurfingHelpers::loadGroup(params_AppState, path_AppState);
 
@@ -72,63 +97,15 @@ void ofxSurfingMidi::startup() {
 
 	//-
 
-	////styles
-	//guiManager.clearStyles();
-	//guiManager.AddStyle(bLoad, OFX_IM_BUTTON_BIG);
-	//guiManager.AddStyle(bSave, OFX_IM_BUTTON_BIG);
-	//guiManager.AddStyle(bReset, OFX_IM_BUTTON_SMALL);
-	//guiManager.AddStyle(bLearning, OFX_IM_TOGGLE_BIG);
-	//guiManager.AddStyle(bUnlearning, OFX_IM_BUTTON_SMALL);
-	//guiManager.AddStyle(bMidiEnabled, OFX_IM_TOGGLE_BIG);
-	//guiManager.AddStyle(bMidiEnabled_Settings, OFX_IM_TOGGLE_BIG);
-	//guiManager.AddStyle(bSmoothingEnabled, OFX_IM_TOGGLE_SMALL);
-	//guiManager.AddStyle(smoothing, OFX_IM_DEFAULT);
+	{
+		auto ss = midiIn->getInPortList();
+		strDebugPorts = "In Ports:\n";
+		for (unsigned int i = 0; i < ss.size(); ++i) {
+			strDebugPorts += ofToString(i) + ": " + ss[i] + "\n";
+		}
+		strDebugPorts += "\n";
+	}
 }
-
-////-----------------------------------------------------
-//void ofxSurfingMidi::update(ofEventArgs& e) {
-//	//if (ofGetFrameNum() == 1) startup();
-//
-//	////ofLogNotice(__FUNCTION__);
-//
-//	//for (map<int, shared_ptr<ofParameterMidiInfo> > ::iterator it = synced.begin(); it != synced.end(); ++it) {
-//	//	it->second->updateSmoothing(smoothing);
-//	//}
-//}
-
-////--------------------------------------------------------------
-//void ofxSurfingMidi::update(){
-//}
-//
-////--------------------------------------------------------------
-//void ofxSurfingMidi::update(ofEventArgs & args)
-//{
-//}
-//
-////--------------------------------------------------------------
-//void ofxSurfingMidi::draw(){
-//}
-////--------------------------------------------------------------
-//void ofxSurfingMidi::keyPressed(ofKeyEventArgs &eventArgs)
-//{
-//	const int key = eventArgs.key;
-//
-//	// modifiers
-//	bool mod_COMMAND = eventArgs.hasModifier(OF_KEY_COMMAND);
-//	bool mod_CONTROL = eventArgs.hasModifier(OF_KEY_CONTROL);
-//	bool mod_ALT = eventArgs.hasModifier(OF_KEY_ALT);
-//	bool mod_SHIFT = eventArgs.hasModifier(OF_KEY_SHIFT);
-//
-//	ofLogNotice(__FUNCTION__) << " : " << key;
-//
-//	//--
-//
-//	if (false){}
-//
-//	else if (key == 'G' && !mod_ALT)
-//	{
-//	}
-//}
 
 //--------------------------------------------------------------
 void ofxSurfingMidi::exit() {
@@ -140,16 +117,6 @@ void ofxSurfingMidi::exit() {
 	ofxParameterMidiSync::save();
 }
 
-////--------------------------------------------------------------
-//void ofxSurfingMidi::setBool(bool b) {
-//	ofLogNotice(__FUNCTION__) << ofToString(b ? "true" : "false");
-//}
-//
-////--------------------------------------------------------------
-//bool ofxSurfingMidi::getBool() {
-//	return true;
-//}
-
 //--------------------------------------------------------------
 void ofxSurfingMidi::setupImGui()
 {
@@ -159,27 +126,38 @@ void ofxSurfingMidi::setupImGui()
 //--------------------------------------------------------------
 void ofxSurfingMidi::drawImGui()
 {
-	guiManager.begin(); // global begin
+	if (!bGui) return;
+
+	// 1. Control
+
+	guiManager.begin();
 	{
+		if (bGui_User)
 		{
-			string n = "ofxSurfingMidi";
-			static bool bOpen0 = true;
 			ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
 			if (guiManager.bAutoResize) window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
-			guiManager.beginWindow(n.c_str(), &bOpen0, window_flags);
+			guiManager.beginWindow(bGui_User, window_flags);
 			{
-				//guiManager.AddGroup(parameters, OFX_IM_GROUP_HIDDEN_HEADER);
+				guiManager.Add(guiManager.bMinimize, OFX_IM_TOGGLE_BUTTON_ROUNDED_SMALL);
 
-				//ImGui::Text("Midi");
 				guiManager.Add(bMidiEnabled_Settings, OFX_IM_TOGGLE_BIG);
-				if (bMidiEnabled_Settings) {
-					guiManager.Add(portNum);
-					guiManager.Add(portName, OFX_IM_TEXT_DISPLAY);
+				if (bMidiEnabled_Settings)
+				{
+					ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5); // fix oversizes
+					{
+						guiManager.Add(portNum);
+						////guiManager.Add(portName, OFX_IM_TEXT_DISPLAY);
+
+						ImGui::PushID("##port");
+						ofxImGuiSurfing::AddCombo(portNum, namesPortsMidiIn);
+						ImGui::PopItemWidth();
+					}
+					ImGui::PopID();
 				}
 
 				ImGui::Spacing();
-				//ImGui::Text("Mapping");
+
 				{
 					bool bOpen = false;
 					ImGuiColorEditFlags _flagw = (bOpen ? ImGuiWindowFlags_NoCollapse : ImGuiWindowFlags_None);
@@ -187,217 +165,83 @@ void ofxSurfingMidi::drawImGui()
 					{
 						guiManager.refreshLayout();
 
-						if (bLearning)guiManager.Add(bLearning, OFX_IM_TOGGLE_BIG_BORDER_BLINK);
-						else guiManager.Add(bLearning, OFX_IM_TOGGLE_BIG);
-						
-						guiManager.Add(bUnlearning, OFX_IM_TOGGLE_SMALL);
+						if (bLearning)guiManager.Add(bLearning, OFX_IM_TOGGLE_BIG_BORDER_BLINK, 2, true);
+						else guiManager.Add(bLearning, OFX_IM_TOGGLE_BIG, 2, true);
 
-						ImGui::Spacing();
+						if (bUnlearning)guiManager.Add(bUnlearning, OFX_IM_TOGGLE_BIG_BORDER_BLINK, 2);
+						else guiManager.Add(bUnlearning, OFX_IM_TOGGLE_BIG, 2);
 
-						guiManager.Add(bLoad, OFX_IM_BUTTON_SMALL, true, 2);
-						guiManager.Add(bSave, OFX_IM_BUTTON_SMALL, false, 2);
-						guiManager.Add(bReset, OFX_IM_BUTTON_SMALL);
+						if (!guiManager.bMinimize)
+						{
+							guiManager.Add(bLoad, OFX_IM_BUTTON_SMALL, 2, true);
+							guiManager.Add(bSave, OFX_IM_BUTTON_SMALL, 2);
+							guiManager.Add(bReset, OFX_IM_BUTTON_SMALL);
 
-						ImGui::Spacing();
+							ImGui::Spacing();
 
-						//ImGui::Text("Smooth");
-						guiManager.Add(bSmoothingEnabled, OFX_IM_TOGGLE_SMALL);
-						if (bSmoothingEnabled)guiManager.Add(smoothing, OFX_IM_DEFAULT);
+							guiManager.Add(bSmoothingEnabled, OFX_IM_TOGGLE_BUTTON_ROUNDED_SMALL);
+							if (bSmoothingEnabled)
+							{
+								guiManager.Add(smoothing, OFX_IM_DEFAULT, 2);
+							}
+						}
 					}
 				}
 
-				//ImGui::Spacing();
-
 				//-
 
-				// debug
+				// Log Debug
+
+				if (!guiManager.bMinimize)
 				{
 					bool bOpen = false;
 					ImGuiColorEditFlags _flagw = (bOpen ? ImGuiWindowFlags_NoCollapse : ImGuiWindowFlags_None);
 					if (ImGui::CollapsingHeader("Log", _flagw))
 					{
-						//guiManager.refreshLayout();
-						string str = "Learning: " + (string)(bLearning ? "YES" : "NO") + "\n";
-						str += "Parameter: " + (string)((learningParameter == nullptr) ? "nullptr" : learningParameter->getName()) + "\n";
+						ImGui::Indent();
+						std::string str;
+						str += "Learning: " + (std::string)(bLearning ? "YES" : "NO") + "\n";
+						str += "Parameter: " + (std::string)((learningParameter == nullptr) ? "nullptr" : learningParameter->getName()) + "\n";
 						str += "CC: " + ofToString(midiMessage.control) + "\n";
 						str += "Message: \n" + midiMessage.toString() + "\n";
 						//	str += "is Recording: " +(string)(?"YES":"NO");
-						strDebug = str;
+						strDebug = strDebugPorts + str;
 						ImGui::TextWrapped(strDebug.c_str());
+						ImGui::Unindent();
 					}
 				}
 
-				//				float _h = WIDGETS_HEIGHT;
-				//				float _w100 = getWidgetsWidth(1);
-				//				float _w50 = getWidgetsWidth(2);
-				//
-				//				ImGui::Text("MIDI INPUT");
-				//
-				//				ofxImGuiSurfing::AddBigToggle(bShowMapping, _w100, _h / 2, false);
-				//				ofxImGuiSurfing::AddBigButton(bLoad, _w50, _h / 2);
-				//				ImGui::SameLine();
-				//				ofxImGuiSurfing::AddBigButton(bSave, _w50, _h / 2);
-				//
-				//				//-
-				//
-				//				bool bOpen = false;
-				//				ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
-				//				_flagt |= ImGuiTreeNodeFlags_Framed;
-				//
-				//				if (ImGui::TreeNodeEx("MIDI", _flagt))
-				//				{
-				//					{
-				//						bool bOpen = true;
-				//						ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
-				//						_flagt |= ImGuiTreeNodeFlags_Framed;
-				//
-				//						if (ImGui::TreeNodeEx("CONNECT", _flagt))
-				//						{
-				//							_w100 = getWidgetsWidth(1);
-				//							_w50 = getWidgetsWidth(2);
-				//
-				//							string ni = "INPUT:  " + midiIn_Port_name.get();
-				//							ImGui::Text(ni.c_str());
-				//							if (ImGui::Button("ON", ImVec2(_w50, _h / 2)))
-				//							{
-				//								midiIn_Port = midiIn_Port;
-				//
-				//								//midiIn.openPort(midiIn_Port);
-				//								//midiIn_Port_name = midiIn.getName();
-				//							}
-				//							ImGui::SameLine();
-				//							if (ImGui::Button("OFF", ImVec2(_w50, _h / 2)))
-				//							{
-				//								disconnect();
-				//								midiIn_Port_name = "";
-				//							}
-				//
-				//							//-
-				//
-				//							string no = "OUTPUT: " + midiOut_Port_name.get();
-				//							ImGui::Text(no.c_str());
-				//							if (ImGui::Button("ON ", ImVec2(_w50, _h / 2)))
-				//							{
-				//								midiOut_Port = midiOut_Port;
-				//
-				//								//midiOut.openPort(midiOut_Port);
-				//								//midiOut_Port_name = midiOut.getName();
-				//							}
-				//							ImGui::SameLine();
-				//							if (ImGui::Button("OFF ", ImVec2(_w50, _h / 2)))
-				//							{
-				//								midiOut.closePort();
-				//								midiOut_Port_name = "";
-				//							}
-				//							ImGui::TreePop();
-				//						}
-				//					}
-				//
-				//					//-
-				//
-				//					{
-				//						bool bOpen = false;
-				//						ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
-				//						_flagt |= ImGuiTreeNodeFlags_Framed;
-				//
-				//						ofxImGuiSurfing::AddGroup(params_MidiPorts, _flagt);
-				//					}
-				//
-				//					ImGui::TreePop();
-				//				}
-				//
-				//				//-
-				//
-				//				ImGui::Dummy(ImVec2(0, 5)); // spacing
-				//
-				//				static bool bLockMappgingPanel = true;
-				//
-				//				ofxImGuiSurfing::AddToggleRoundedButton(guiManager.bExtra);
-				//				if (guiManager.bExtra)
-				//				{
-				//					ImGui::Indent();
-				//
-				//					_w100 = getWidgetsWidth(1);
-				//					_w50 = getWidgetsWidth(2);
-				//
-				//					ofxImGuiSurfing::ToggleRoundedButton("Lock Mapping Panel", &bLockMappgingPanel);
-				//					ofxImGuiSurfing::AddToggleRoundedButton(bAutoReconnect);
-				//					//ofxImGuiSurfing::AddBigButton(bPopulate, _w100, _h / 2);
-				//					//static bool bClear = false;
-				//					//ofxImGuiSurfing::ToggleRoundedButton("Clear", &bClear);
-				//					//{
-				//					//	if (bClear) bClear = false;
-				//					//	clear();
-				//					//}
-				//					ofxImGuiSurfing::AddToggleRoundedButton(bAutoSave);
-				//
-				//					bool bOpen = false;
-				//					ImGuiTreeNodeFlags _flagt = (bOpen ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
-				//					_flagt |= ImGuiTreeNodeFlags_Framed;
-				//					if (ImGui::TreeNodeEx("PATH SETTINGS", _flagt))
-				//					{
-				//						ImGui::Indent();
-				//						ImGui::Text(path_Global.c_str());
-				//						ImGui::Text(filenameSettings.c_str());
-				//						ImGui::Unindent();
-				//						ImGui::TreePop();
-				//					}
-				//
-				//					ImGui::Dummy(ImVec2(0, 5)); // spacing
-				//
-				//					//-
-				//
-				//#ifdef USE_MIDI_PARAMS__VIDEO_SKIP
-				//					static bool bPopulateMidiToggles = false;
-				//					if (ofxImGuiSurfing::ToggleRoundedButton("Populate Midi", &bPopulateMidiToggles))
-				//					{
-				//						mMidiParams.add(presets.getParametersSelectorToggles());
-				//					}
-				//#endif
-				//
-				//					//--
-				//
-				//					/*
-				//					ofxImGuiSurfing::AddToggleRoundedButton(guiManager.bAdvanced);
-				//					if (guiManager.bExtra) guiManager.drawAdvancedSubPanel();
-				//					*/
-				//
-				//					ImGui::Unindent();
-				//				}
-				//
-				//				//----
-				//
-				//				// get window position for advanced layout linked position
-				//				if (bLockMappgingPanel)
-				//				{
-				//					float pad = PADDING_PANELS;
-				//					auto posx = ImGui::GetWindowPos().x;
-				//					auto posy = ImGui::GetWindowPos().y;
-				//					float __w = ImGui::GetWindowWidth();
-				//					float __h = ImGui::GetWindowHeight();
-				//					pos.x = posx + __w + pad;
-				//					pos.y = posy;
-				//				}
+				//--
+
+				if (!guiManager.bMinimize)
+				{
+					ofxImGuiSurfing::AddToggleRoundedButton(bGui_Params);
+				}
 			}
 			guiManager.endWindow();
 		}
 
-		//-
+		//---
 
-		if (bParameterGroupSetup)
-		{
-			string n = "Parameters";
-			static bool bOpen0 = true;
-			ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
-			if (guiManager.bAutoResize) window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
+		// 2. Parameters
 
-			guiManager.beginWindow(n.c_str(), &bOpen0, window_flags);
-			{
-				guiManager.AddGroup(syncGroup);
-				//ofxParamMidiSync::printParamGroupElements(syncGroup);
-			}
-			guiManager.endWindow();
-		}
+		if (!guiManager.bMinimize)
+			if (bGui_Params)
+				if (bParameterGroupSetup)
+				{
+					ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
+					if (guiManager.bAutoResize) window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
+
+					guiManager.beginWindow(bGui_Params, window_flags);
+					{
+						guiManager.AddGroup(syncGroup);
+
+						//ofxParamMidiSync::printParamGroupElements(syncGroup);
+
+						ofxImGuiSurfing::AddToggleRoundedButton(bGui_User);
+					}
+					guiManager.endWindow();
+				}
 	}
-	guiManager.end(); // global end
+	guiManager.end();
 }

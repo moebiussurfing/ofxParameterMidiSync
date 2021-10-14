@@ -6,7 +6,6 @@
 //	Modified by moebiusSurfing: small modifications, added ImGui and settings.
 //
 
-
 #pragma once
 
 #include "ofMain.h"
@@ -21,7 +20,7 @@ class ofxParameterMidiSync:  public ofxMidiListener {
 public:
     ofxParameterMidiSync();
     ~ofxParameterMidiSync();
-
+	
 	virtual void exit() {};
 	virtual void setup(ofAbstractParameter & parameters);//default
 
@@ -64,18 +63,26 @@ public:
 	
 	ofParameterGroup parameters;
 	
-	std::shared_ptr<ofxMidiIn> getMidiIn();
-	std::shared_ptr<ofxMidiOut> getMidiOut();
-	
 	void setFilePath(std::string path);
 	std::string getFilePath();
 	
 	virtual void update(ofEventArgs& e);
+	
+	//-
 
+	std::shared_ptr<ofxMidiIn> getMidiIn();
+	std::shared_ptr<ofxMidiOut> getMidiOut();
+
+public:
 	ofParameter<int> portNum;
 	ofParameter<string> portName;
+	std::vector<std::string> namesPortsMidiIn;
+	std::vector<std::string> namesPortsMidiOut;
 
-//private:
+	ofParameter<bool> bMidiEnabled;
+
+	//-
+
 	std::string path_Ports;
 	std::string path_AppState;
 	std::string path_Global;
@@ -88,14 +95,9 @@ protected:
 	void closeMidi();
 	
 	ofParameter<bool> bLoad, bSave, bReset;
-	//ofParameter<void> bLoad, bSave, bReset;
 
-	ofParameter<bool> bLearning, bUnlearning, bMidiEnabled, bSmoothingEnabled;
+	ofParameter<bool> bLearning, bUnlearning, bSmoothingEnabled;
 	ofParameter<bool> bMidiEnabled_Settings;
-	//ofParameter<int> portNum;
-	//ofParameter<string> portName;
-	
-	//void update(ofEventArgs& e);
 	
     void newMidiMessage(ofxMidiMessage& eventArgs);
 
@@ -116,6 +118,7 @@ protected:
     shared_ptr<ofxMidiNanoKontrolButtons> kontrolButtons;
 
 	string strDebug;
+	string strDebugPorts;
 
 private:
 	bool bMidiOpened = false;

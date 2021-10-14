@@ -3,7 +3,7 @@
 //  emptyExample
 //
 //  Created by Roy Macdonald on 18-08-15.
-//
+//	Modified by moebiusSurfing: small modifications, added ImGui and settings.
 //
 
 #include "ofxParameterMidiSync.h"
@@ -68,20 +68,20 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 	bIsSetup = true;
 	parameters.setName("ofParameterMidiSync");
 
-	//parameters.add(bLoad.set("Load"));
-	//parameters.add(bSave.set("Save"));
-	//parameters.add(bReset.set("Reset"));
+	//parameters.add(bGui.set("MIDI", true));
+
 	parameters.add(bLoad.set("Load", false));
 	parameters.add(bSave.set("Save", false));
 	parameters.add(bReset.set("Reset", false));
 
 	parameters.add(bLearning.set("Learn", false));
 	parameters.add(bUnlearning.set("Unlearn", false));
-	bMidiEnabled.set("MidiEnabled", false);
+	bMidiEnabled.set("Enabled", false);
 	//parameters.add(bMidiEnabled.set("MidiEnabled", false));
 	parameters.add(bMidiEnabled_Settings.set("Enable Midi", false));
-	parameters.add(bSmoothingEnabled.set("Enable Smoothing", false));
-	parameters.add(smoothing.set("Smoothing", 0.5, 0, 0.95));
+	parameters.add(bSmoothingEnabled.set("Enable Smooth", false));
+	parameters.add(smoothing.set("Smooth", 0.5, 0, 0.95));
+
 	parameters.add(this->portNum.set("Midi Port", portNum, 0, getMidiIn()->getNumInPorts() - 1));
 	parameters.add(this->portName.set("Port Name", ""));
 	//paramsListeners.push(portNum.newListener(this, &ofxParameterMidiSync::refreshPort));
@@ -90,6 +90,13 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 	//paramsListeners.push(bSave.newListener([&]() { save(); }));
 	//paramsListeners.push(bReset.newListener(this, &ofxParameterMidiSync::reset));
 
+	namesPortsMidiIn = midiIn->getInPortList();
+	this->portNum.setMax(getMidiIn()->getNumInPorts() - 1);
+
+	//-
+
+	// Load
+
 	paramsListeners.push(bLoad.newListener([&](bool &) {
 		if (bLoad) {
 			bLoad = false;
@@ -97,12 +104,20 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 		}
 	}));
 
+	//-
+
+	// Save
+	
 	paramsListeners.push(bSave.newListener([&](bool &) {
 		if (bSave) {
 			bSave = false;
 			save();
 		}
 	}));
+
+	//-
+
+	// Reset
 
 	paramsListeners.push(bReset.newListener([&](bool &) {
 		if (bReset) {
@@ -113,6 +128,8 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 	//paramsListeners.push(bReset.newListener(this, &ofxParameterMidiSync::reset));
 
 	//-
+
+	// Mapping
 
 	paramsListeners.push(bLearning.newListener([&](bool &) {
 		if (bLearning && bIsSetup) {
@@ -131,11 +148,19 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 
 	//-
 
+	// Enable
+
 	paramsListeners.push(bMidiEnabled.newListener([&](bool &) {
-		if (bMidiEnabled) {
+		namesPortsMidiIn.clear();
+		namesPortsMidiIn = midiIn->getInPortList();
+		this->portNum.setMax(getMidiIn()->getNumInPorts() - 1);
+
+		if (bMidiEnabled)
+		{
 			openMidi();
 		}
-		else {
+		else 
+		{
 			closeMidi();
 		}
 
@@ -166,6 +191,8 @@ void ofxParameterMidiSync::setup(int portNum, bool bUseRecorder, bool bUsePlayer
 	}));
 
 	//-
+
+	// Recorder
 
 	if (bUsePlayer || bUseRecorder) {
 		kontrolButtons = std::make_shared<ofxMidiNanoKontrolButtons>();
@@ -232,6 +259,11 @@ void ofxParameterMidiSync::reset() {
 void ofxParameterMidiSync::openMidi() {
 	if (bIsSetup && bParameterGroupSetup && !bMidiOpened) {
 		getMidiIn()->listInPorts();
+
+		namesPortsMidiIn.clear();
+		namesPortsMidiIn = midiIn->getInPortList();
+		this->portNum.setMax(getMidiIn()->getNumInPorts() - 1);
+
 		bMidiOpened = midiIn->openPort(portNum);
 		if (bMidiOpened) {
 			midiIn->ignoreTypes(true, true, false);
@@ -336,6 +368,7 @@ bool ofxParameterMidiSync::linkMidiToOfParameter(ofxMidiMessage& msg, ofAbstract
 	if (synced.count(msg.control) == 0) {
 		auto s = std::make_shared<ofParameterMidiInfo>(param, msg);
 		synced[msg.control] = s;
+
 		if (s->isMultiDim()) {
 			for (int i = 1; i < s->dims; i++) {
 				synced[msg.control + i] = std::make_shared<ofParameterMidiInfo>(param, msg, i);
@@ -423,11 +456,12 @@ void ofxParameterMidiSync::drawDebug() {
 //--------------------------------------------------------------
 void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
 	if (bIsSetup) {
-		ofxMidiMessage message = msg;
-		if (message.status == MIDI_CONTROL_CHANGE) {
+		ofxMidiMessage _midiMessage = msg;
+
+		if (_midiMessage.status == MIDI_CONTROL_CHANGE) {
 			if (learningParameter != nullptr && bLearning) {
 				if (bParameterGroupSetup) {
-					if (linkMidiToOfParameter(message, learningParameter)) {
+					if (linkMidiToOfParameter(_midiMessage, learningParameter)) {
 						ofLogNotice(__FUNCTION__) << "learned  " << endl;
 						learningParameter = nullptr;
 						bLearning = false;
@@ -435,13 +469,13 @@ void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
 				}
 			}
 			else if (bUnlearning) {
-				if (synced.count(message.control) > 0) {
-					int dims = synced[message.control]->dims;
+				if (synced.count(_midiMessage.control) > 0) {
+					int dims = synced[_midiMessage.control]->dims;
 					if (dims == 0) dims = 1;
 					if (dims > 4) dims = 4;
 					for (int i = 0; i < dims; i++) {
-						if (synced.count(message.control + i)) {
-							synced.erase(message.control + i);
+						if (synced.count(_midiMessage.control + i)) {
+							synced.erase(_midiMessage.control + i);
 						}
 					}
 					bUnlearning = false;
@@ -458,14 +492,28 @@ void ofxParameterMidiSync::newMidiMessage(ofxMidiMessage& msg) {
 				//                }else if(msg.control == NANO_KONTROL_KEY_PLAY) {
 				//                }else if(msg.control == NANO_KONTROL_KEY_REC)  {
 				//				
-				if (synced.count(message.control)) {
-					synced[message.control]->setNewValue(message.value, bSmoothingEnabled);
-					//					synced[message.control]->sendFeedback(midiOut);
+				if (synced.count(_midiMessage.control)) {
+					synced[_midiMessage.control]->setNewValue(_midiMessage.value, bSmoothingEnabled);
+					//					synced[_midiMessage.control]->sendFeedback(midiOut);
 
 				}
 			}
 		}
-		midiMessage = message;
+
+		//TODO:
+		else if (_midiMessage.status == MIDI_NOTE_ON) {
+			if (learningParameter != nullptr && bLearning) {
+				if (bParameterGroupSetup) {
+					if (linkMidiToOfParameter(_midiMessage, learningParameter)) {
+						ofLogNotice(__FUNCTION__) << "learned  " << endl;
+						learningParameter = nullptr;
+						bLearning = false;
+					}
+				}
+			}
+		}
+
+		midiMessage = _midiMessage;
 	}
 }
 
@@ -506,7 +554,7 @@ void ofxParameterMidiSync::drawGui() {
 		str += "learningParameter: " + (string)((learningParameter == nullptr) ? "nullptr" : learningParameter->getName()) + "\n";
 		str += "controlNum: " + ofToString(midiMessage.control) + "\n";
 		str += "lastMidiMessage: " + midiMessage.toString() + "\n";
-		//	str += "is Recording: " +(string)(?"YES":"NO");
+		//str += "is Recording: " +(string)(?"YES":"NO");
 		strDebug = str;
 	}
 }

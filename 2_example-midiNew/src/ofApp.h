@@ -24,6 +24,7 @@ public:
 	ofParameter<glm::vec3>vecParam;
     ofParameter<bool> bBool1;
     ofParameter<bool> bBool2;
+    //ofParameter<void> bButton;
     
-	ofxSurfingMidi sync;
+	ofxSurfingMidi mMidiParams;
 };

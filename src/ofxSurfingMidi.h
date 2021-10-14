@@ -5,7 +5,11 @@
 
 TODO:
 
-+ add midi out for feedback mirror
++ bool/buttons to midi notes not working..
++ 
+
++ add dropdown combo for port selector
++ add midi out for feedback mirror or check bSendFeedback
 + add groups on runtime
 
 */
@@ -31,6 +35,7 @@ private:
 
 public:
 	void setup(ofAbstractParameter & parameters) override;
+	void reset(ofAbstractParameter & parameters);
 	void drawImGui();
 
 private:
@@ -47,12 +52,13 @@ private:
 	//void draw(ofEventArgs & args);
 	//void keyPressed(ofKeyEventArgs &eventArgs);
 
-	//void setBool(bool b);
-	//bool getBool();
-
 	ofParameterGroup params_MidiPorts{ "PORTS" };
 	ofParameterGroup params_AppState{ "AppState" };
 
+public:
+	ofParameter<bool> bGui;
+	ofParameter<bool> bGui_User;
+	ofParameter<bool> bGui_Params;
 
 };
 
